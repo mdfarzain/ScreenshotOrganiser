@@ -17,9 +17,11 @@ class ExpiryWorker(
             val expiredScreenshots = repository.getExpiredScreenshots()
 
             expiredScreenshots.forEach { screenshot ->
-                repository.update(
-                    screenshot.copy(isArchived = false)
-                )
+                if (!screenshot.isReviewRequired) {
+                    repository.update(
+                        screenshot.copy(isReviewRequired = true)
+                    )
+                }
             }
 
             Result.success()

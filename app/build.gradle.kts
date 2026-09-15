@@ -55,5 +55,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.sqlcipher.android)
     implementation("androidx.work:work-runtime-ktx:2.10.1")
 }

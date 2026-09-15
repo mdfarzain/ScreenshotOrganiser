@@ -28,6 +28,12 @@ interface ScreenshotDao {
     @Query("SELECT * FROM screenshots WHERE expiryDate IS NOT NULL AND expiryDate <= :currentTime")
     suspend fun getExpiredScreenshots(currentTime: Long): List<ScreenshotEntity>
 
+    @Query("SELECT * FROM screenshots WHERE isSensitive = 0 AND ocrText LIKE '%' || :query || '%'")
+    fun searchByOcrText(query: String): Flow<List<ScreenshotEntity>>
+
+    @Query("SELECT * FROM screenshots WHERE isReviewRequired = 1")
+    fun getReviewRequiredScreenshots(): Flow<List<ScreenshotEntity>>
+
     @Query("DELETE FROM screenshots")
     suspend fun deleteAll()
 }

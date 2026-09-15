@@ -11,7 +11,8 @@ object DatabaseTestData {
                 category = "EVENT",
                 expiryDate = null,
                 isArchived = false,
-                isSensitive = false
+                isSensitive = false,
+                isReviewRequired = false
             ),
             ScreenshotEntity(
                 uri = "content://test/screenshot2",
@@ -20,7 +21,8 @@ object DatabaseTestData {
                 category = "RECEIPT",
                 expiryDate = null,
                 isArchived = false,
-                isSensitive = false
+                isSensitive = false,
+                isReviewRequired = false
             ),
             ScreenshotEntity(
                 uri = "content://test/screenshot3",
@@ -29,7 +31,8 @@ object DatabaseTestData {
                 category = "CONTACT",
                 expiryDate = null,
                 isArchived = false,
-                isSensitive = false
+                isSensitive = false,
+                isReviewRequired = false
             ),
             ScreenshotEntity(
                 uri = "content://test/screenshot4",
@@ -38,7 +41,8 @@ object DatabaseTestData {
                 category = "GENERAL",
                 expiryDate = null,
                 isArchived = false,
-                isSensitive = false
+                isSensitive = false,
+                isReviewRequired = false
             )
         )
     }

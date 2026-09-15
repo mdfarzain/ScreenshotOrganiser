@@ -30,6 +30,14 @@ class RoomScreenshotRepository(
         return dao.getExpiredScreenshots(System.currentTimeMillis())
     }
 
+    fun searchByOcrText(query: String): Flow<List<ScreenshotEntity>> {
+        return dao.searchByOcrText(query)
+    }
+
+    fun getReviewRequiredScreenshots(): Flow<List<ScreenshotEntity>> {
+        return dao.getReviewRequiredScreenshots()
+    }
+
     suspend fun deleteAll() {
         dao.deleteAll()
     }

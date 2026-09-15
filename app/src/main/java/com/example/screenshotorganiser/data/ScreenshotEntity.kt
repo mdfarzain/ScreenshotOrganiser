@@ -14,5 +14,6 @@ data class ScreenshotEntity(
     val category: String? = null,
     val expiryDate: Long? = null,
     val isArchived: Boolean = false,
-    val isSensitive: Boolean = false
+    val isSensitive: Boolean = false,
+    val isReviewRequired: Boolean = false
 )

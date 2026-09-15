@@ -13,10 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.screenshotorganiser.ui.ScreenshotScreen
 import com.example.screenshotorganiser.ui.theme.ScreenshotOrganiserTheme
+import com.example.screenshotorganiser.data.ExpiryWorkScheduler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ExpiryWorkScheduler.schedule(applicationContext)
         enableEdgeToEdge()
         setContent {
             ScreenshotOrganiserTheme {

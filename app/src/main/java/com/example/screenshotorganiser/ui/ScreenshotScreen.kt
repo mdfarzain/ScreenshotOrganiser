@@ -65,6 +65,7 @@ import com.example.screenshotorganiser.data.ScreenshotRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.screenshotorganiser.classification.ocr.OCRProcessor
 
 private val SearchIcon: ImageVector by lazy {
     ImageVector.Builder(
@@ -152,6 +153,9 @@ fun ScreenshotScreen(
     var screenshots by remember { mutableStateOf<List<Screenshot>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var ocrResult by remember { mutableStateOf("") }
+    var ocrError by remember { mutableStateOf("") }
+    var isOcrLoading by remember { mutableStateOf(false) }
 
     val filteredScreenshots = remember(searchQuery, screenshots) {
         if (searchQuery.isBlank()) {

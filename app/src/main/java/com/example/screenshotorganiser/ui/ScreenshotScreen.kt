@@ -65,6 +65,15 @@ import com.example.screenshotorganiser.data.ScreenshotRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
+import com.example.screenshotorganiser.classification.Category
+import com.example.screenshotorganiser.classification.ClassificationResult
+import com.example.screenshotorganiser.classification.classifier.ScreenshotClassifier
 import com.example.screenshotorganiser.classification.ocr.OCRProcessor
 
 private val SearchIcon: ImageVector by lazy {
@@ -153,9 +162,12 @@ fun ScreenshotScreen(
     var screenshots by remember { mutableStateOf<List<Screenshot>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var ocrResult by remember { mutableStateOf("") }
-    var ocrError by remember { mutableStateOf("") }
+    val ocrProcessor = remember { OCRProcessor(context) }
+    val classifier = remember { ScreenshotClassifier() }
+
     var isOcrLoading by remember { mutableStateOf(false) }
+    var ocrErrorMessage by remember { mutableStateOf<String?>(null) }
+    var classificationResult by remember { mutableStateOf<ClassificationResult?>(null) }
 
     val filteredScreenshots = remember(searchQuery, screenshots) {
         if (searchQuery.isBlank()) {
@@ -285,7 +297,26 @@ fun ScreenshotScreen(
                                     items = filteredScreenshots,
                                     key = { it.uri.toString() }
                                 ) { screenshot ->
-                                    ScreenshotItem(screenshot = screenshot)
+                                    ScreenshotItem(
+                                        screenshot = screenshot,
+                                        onClick = {
+                                            isOcrLoading = true
+                                            ocrErrorMessage = null
+                                            classificationResult = null
+
+                                            ocrProcessor.process(
+                                                uri = screenshot.uri,
+                                                onSuccess = { visionText ->
+                                                    classificationResult = classifier.classify(visionText)
+                                                    isOcrLoading = false
+                                                },
+                                                onError = { exception ->
+                                                    ocrErrorMessage = exception.localizedMessage ?: "Failed to extract text from screenshot."
+                                                    isOcrLoading = false
+                                                }
+                                            )
+                                        }
+                                    )
                                 }
                             }
                         }
@@ -294,14 +325,158 @@ fun ScreenshotScreen(
             }
         }
     }
+
+    if (isOcrLoading) {
+        AlertDialog(
+            onDismissRequest = { isOcrLoading = false },
+            title = { Text("Processing Screenshot") },
+            text = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                ) {
+                    CircularProgressIndicator()
+                    Text("Running OCR & classification...")
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    if (ocrErrorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { ocrErrorMessage = null },
+            title = { Text("OCR Error") },
+            text = { Text(ocrErrorMessage ?: "An unexpected error occurred during OCR.") },
+            confirmButton = {
+                TextButton(onClick = { ocrErrorMessage = null }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
+    classificationResult?.let { result ->
+        ClassificationResultDialog(
+            result = result,
+            onDismiss = { classificationResult = null }
+        )
+    }
+}
+
+@Composable
+fun ClassificationResultDialog(
+    result: ClassificationResult,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Classification Result",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Category: ${result.category.name}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                val confidenceText = if (result.category == Category.GENERAL && result.confidence == 0f) {
+                    "0% (Low / insufficient evidence)"
+                } else {
+                    String.format(java.util.Locale.US, "%.1f%%", result.confidence * 100)
+                }
+
+                Text(
+                    text = "Confidence: $confidenceText",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                Text(
+                    text = "Dates:",
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = if (result.detectedDates.isNotEmpty()) {
+                        result.detectedDates.joinToString("\n")
+                    } else {
+                        "None"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Currency:",
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = if (result.detectedCurrency.isNotEmpty()) {
+                        result.detectedCurrency.joinToString("\n")
+                    } else {
+                        "None"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Phone:",
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = if (result.detectedPhoneNumbers.isNotEmpty()) {
+                        result.detectedPhoneNumbers.joinToString("\n")
+                    } else {
+                        "None"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Email:",
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = if (result.detectedEmails.isNotEmpty()) {
+                        result.detectedEmails.joinToString("\n")
+                    } else {
+                        "None"
+                    },
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
 
 @Composable
 fun ScreenshotItem(
     screenshot: Screenshot,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
     ) {
